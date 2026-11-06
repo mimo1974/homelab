@@ -1,0 +1,411 @@
+# module.k3s_evo.libvirt_cloudinit_disk.this:
+resource "libvirt_cloudinit_disk" "this" {
+    id             = "e1799fc3f15f1756"
+    meta_data      = <<-EOT
+        "instance-id": "k3s-evo"
+        "local-hostname": "k3s-evo"
+    EOT
+    name           = "k3s-evo-cidata"
+    network_config = <<-EOT
+        version: 2
+        ethernets:
+          eth0:
+            match:
+              macaddress: "52:54:00:6b:33:ef"
+            set-name: eth0
+            addresses:
+              - 192.168.1.239/24
+            routes:
+              - to: default
+                via: 192.168.1.248
+            nameservers:
+              addresses:
+                - 1.1.1.1
+    EOT
+    path           = "/var/folders/fs/69ysq_y92dn4f4n07s9z0h5w0000gn/T/terraform-provider-libvirt-cloudinit/cloudinit-e1799fc3f15f1756.iso"
+    size           = 45056
+    user_data      = <<-EOT
+        #cloud-config
+        hostname: k3s-evo
+        manage_etc_hosts: true
+        users:
+          - name: ubuntu
+            sudo: ALL=(ALL) NOPASSWD:ALL
+            shell: /bin/bash
+            lock_passwd: true
+            ssh_authorized_keys:
+              - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDf4Irr7o80dYwsqGqFeMjMhvfdUcUAUoahLoiwATRJsEBbk9gYRwqxzdpevpyWp1W1vdFSEMUYgBbXYvlqEDGna/+nAUB69eGT6d5j3zYVJP1dgjdHzwNSNx6CJYfv7uFDFCZEGNR2fxZLZOeKE+g+BIGykFiETEp7s8sRPa9Yf8MCGChuWP4I5km9M1LsxQUmL7MGAxrHHSxqarOiUhfc9cr6hnhIG15kANkixyTQDTuSjDt4U+YrBFfjhzmk3hbp5MkkY1haW9i2LKc0wkgZ3/67gn+kvKpC/wJGKtenbCyjztVJR3w21q0z2KJLlz8wLjDYJrmq0599+9mGiJm3 mimo@Voyager4.local
+        ssh_pwauth: false
+        package_update: true
+        packages:
+          - qemu-guest-agent
+        runcmd:
+          - systemctl enable --now qemu-guest-agent
+    EOT
+}
+
+# module.k3s_evo.libvirt_domain.this:
+resource "libvirt_domain" "this" {
+    autostart   = true
+    cpu         = {
+        mode = "host-passthrough"
+    }
+    devices     = {
+        disks      = [
+            {
+                boot   = {
+                    order = 1
+                }
+                driver = {
+                    name = "qemu"
+                    type = "qcow2"
+                }
+                source = {
+                    volume = {
+                        pool   = "k3s-evo"
+                        volume = "k3s-evo.qcow2"
+                    }
+                }
+                target = {
+                    bus = "virtio"
+                    dev = "vda"
+                }
+            },
+            {
+                driver    = {
+                    name = "qemu"
+                    type = "raw"
+                }
+                read_only = true
+                source    = {
+                    volume = {
+                        pool   = "k3s-evo"
+                        volume = "k3s-evo-cidata.iso"
+                    }
+                }
+                target    = {
+                    bus = "virtio"
+                    dev = "vdb"
+                }
+            },
+        ]
+        interfaces = [
+            {
+                mac    = {
+                    address = "52:54:00:6b:33:ef"
+                }
+                model  = {
+                    type = "virtio"
+                }
+                source = {
+                    bridge = {
+                        bridge = "br0"
+                    }
+                }
+            },
+        ]
+    }
+    features    = {
+        acpi = true
+    }
+    id          = 1
+    memory      = 16384
+    memory_unit = "MiB"
+    name        = "k3s-evo"
+    os          = {
+        firmware     = "efi"
+        type         = "hvm"
+        type_arch    = "x86_64"
+        type_machine = "q35"
+    }
+    running     = true
+    type        = "kvm"
+    uuid        = "edfdd28d-3860-41e3-8c83-a8a4f9449b1d"
+    vcpu        = 4
+}
+
+# module.k3s_evo.libvirt_pool.this:
+resource "libvirt_pool" "this" {
+    allocation = 25510756352
+    available  = 184204443648
+    capacity   = 209715200000
+    id         = "4e8d8643-2cc0-4952-9099-cbf4992f2fce"
+    name       = "k3s-evo"
+    target     = {
+        path = "/var/lib/libvirt/images/k3s-evo"
+    }
+    type       = "dir"
+    uuid       = "4e8d8643-2cc0-4952-9099-cbf4992f2fce"
+}
+
+# module.k3s_evo.libvirt_volume.base:
+resource "libvirt_volume" "base" {
+    allocation = 621285376
+    capacity   = 3758096384
+    create     = {
+        content = {
+            url = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+        }
+    }
+    id         = "/var/lib/libvirt/images/k3s-evo/k3s-evo-base.qcow2"
+    key        = "/var/lib/libvirt/images/k3s-evo/k3s-evo-base.qcow2"
+    name       = "k3s-evo-base.qcow2"
+    path       = "/var/lib/libvirt/images/k3s-evo/k3s-evo-base.qcow2"
+    physical   = 621284352
+    pool       = "k3s-evo"
+}
+
+# module.k3s_evo.libvirt_volume.cidata:
+resource "libvirt_volume" "cidata" {
+    allocation = 45056
+    capacity   = 45056
+    create     = {
+        content = {
+            url = "/var/folders/fs/69ysq_y92dn4f4n07s9z0h5w0000gn/T/terraform-provider-libvirt-cloudinit/cloudinit-e1799fc3f15f1756.iso"
+        }
+    }
+    id         = "/var/lib/libvirt/images/k3s-evo/k3s-evo-cidata.iso"
+    key        = "/var/lib/libvirt/images/k3s-evo/k3s-evo-cidata.iso"
+    name       = "k3s-evo-cidata.iso"
+    path       = "/var/lib/libvirt/images/k3s-evo/k3s-evo-cidata.iso"
+    physical   = 45056
+    pool       = "k3s-evo"
+}
+
+# module.k3s_evo.libvirt_volume.disk:
+resource "libvirt_volume" "disk" {
+    allocation    = 200704
+    backing_store = {
+        format = {
+            type = "qcow2"
+        }
+        path   = "/var/lib/libvirt/images/k3s-evo/k3s-evo-base.qcow2"
+    }
+    capacity      = 60
+    capacity_unit = "GiB"
+    id            = "/var/lib/libvirt/images/k3s-evo/k3s-evo.qcow2"
+    key           = "/var/lib/libvirt/images/k3s-evo/k3s-evo.qcow2"
+    name          = "k3s-evo.qcow2"
+    path          = "/var/lib/libvirt/images/k3s-evo/k3s-evo.qcow2"
+    physical      = 197568
+    pool          = "k3s-evo"
+    target        = {
+        format = {
+            type = "qcow2"
+        }
+        path   = "/var/lib/libvirt/images/k3s-evo/k3s-evo.qcow2"
+    }
+}
+# module.k3s_i7.proxmox_download_file.image:
+resource "proxmox_download_file" "image" {
+    content_type        = "import"
+    datastore_id        = "local"
+    file_name           = "ubuntu-24.04-noble-amd64.qcow2"
+    id                  = "local:import/ubuntu-24.04-noble-amd64.qcow2"
+    node_name           = "pve01"
+    overwrite           = true
+    overwrite_unmanaged = false
+    size                = 621284352
+    upload_timeout      = 600
+    url                 = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+    verify              = true
+}
+
+# module.k3s_i7.proxmox_virtual_environment_file.user_data:
+resource "proxmox_virtual_environment_file" "user_data" {
+    content_type   = "snippets"
+    datastore_id   = "local"
+    file_name      = "k3s-i7-user-data.yaml"
+    id             = "local:snippets/k3s-i7-user-data.yaml"
+    node_name      = "pve01"
+    overwrite      = true
+    timeout_upload = 1800
+    upload_mode    = "stream"
+
+    source_raw {
+        data      = <<-EOT
+            #cloud-config
+            hostname: k3s-i7
+            manage_etc_hosts: true
+            users:
+              - name: ubuntu
+                sudo: ALL=(ALL) NOPASSWD:ALL
+                shell: /bin/bash
+                lock_passwd: true
+                ssh_authorized_keys:
+                  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDf4Irr7o80dYwsqGqFeMjMhvfdUcUAUoahLoiwATRJsEBbk9gYRwqxzdpevpyWp1W1vdFSEMUYgBbXYvlqEDGna/+nAUB69eGT6d5j3zYVJP1dgjdHzwNSNx6CJYfv7uFDFCZEGNR2fxZLZOeKE+g+BIGykFiETEp7s8sRPa9Yf8MCGChuWP4I5km9M1LsxQUmL7MGAxrHHSxqarOiUhfc9cr6hnhIG15kANkixyTQDTuSjDt4U+YrBFfjhzmk3hbp5MkkY1haW9i2LKc0wkgZ3/67gn+kvKpC/wJGKtenbCyjztVJR3w21q0z2KJLlz8wLjDYJrmq0599+9mGiJm3 mimo@Voyager4.local
+            ssh_pwauth: false
+            package_update: true
+            packages:
+              - qemu-guest-agent
+            runcmd:
+              - systemctl enable --now qemu-guest-agent
+        EOT
+        file_name = "k3s-i7-user-data.yaml"
+        resize    = 0
+    }
+}
+
+# module.k3s_i7.proxmox_virtual_environment_vm.this:
+resource "proxmox_virtual_environment_vm" "this" {
+    acpi                                 = true
+    bios                                 = "seabios"
+    boot_order                           = [
+        "virtio0",
+        "net0",
+    ]
+    delete_unreferenced_disks_on_destroy = true
+    description                          = [90mnull[0m[0m
+    hook_script_file_id                  = [90mnull[0m[0m
+    id                                   = "101"
+    ipv4_addresses                       = [
+        [
+            "127.0.0.1",
+        ],
+        [
+            "192.168.1.238",
+        ],
+    ]
+    ipv6_addresses                       = [
+        [
+            "::1",
+        ],
+        [
+            "fd00::be24:11ff:fe4c:d24a",
+            "fe80::be24:11ff:fe4c:d24a",
+        ],
+    ]
+    keyboard_layout                      = "en-us"
+    kvm_arguments                        = [90mnull[0m[0m
+    mac_addresses                        = [
+        "00:00:00:00:00:00",
+        "BC:24:11:4C:D2:4A",
+    ]
+    machine                              = [90mnull[0m[0m
+    migrate                              = false
+    name                                 = "k3s-i7"
+    network_device                       = [
+        {
+            bridge       = "vmbr0"
+            disconnected = false
+            enabled      = true
+            firewall     = false
+            mac_address  = "BC:24:11:4C:D2:4A"
+            model        = "virtio"
+            mtu          = 0
+            queues       = 0
+            rate_limit   = 0
+            trunks       = [90mnull[0m[0m
+            vlan_id      = 0
+        },
+    ]
+    network_interface_names              = [
+        "lo",
+        "eth0",
+    ]
+    node_name                            = "pve01"
+    on_boot                              = true
+    pool_id                              = [90mnull[0m[0m
+    protection                           = false
+    purge_on_destroy                     = true
+    reboot                               = false
+    reboot_after_update                  = true
+    scsi_hardware                        = "virtio-scsi-pci"
+    started                              = true
+    stop_on_destroy                      = false
+    tablet_device                        = true
+    tags                                 = [
+        "k3s",
+        "terraform",
+    ]
+    template                             = false
+    timeout_clone                        = 1800
+    timeout_create                       = 1800
+    timeout_migrate                      = 1800
+    timeout_move_disk                    = 1800
+    timeout_reboot                       = 1800
+    timeout_shutdown_vm                  = 1800
+    timeout_start_vm                     = 1800
+    timeout_stop_vm                      = 300
+    vm_id                                = 101
+
+    agent {
+        enabled = true
+        timeout = "15m"
+        trim    = false
+        type    = "virtio"
+    }
+
+    cpu {
+        affinity     = [90mnull[0m[0m
+        architecture = [90mnull[0m[0m
+        cores        = 4
+        hotplugged   = 0
+        limit        = 0
+        numa         = false
+        sockets      = 1
+        type         = "host"
+        units        = 0
+    }
+
+    disk {
+        aio               = "io_uring"
+        backup            = true
+        cache             = "none"
+        datastore_id      = "local-lvm"
+        discard           = "on"
+        file_format       = "raw"
+        file_id           = [90mnull[0m[0m
+        import_from       = "local:import/ubuntu-24.04-noble-amd64.qcow2"
+        interface         = "virtio0"
+        iothread          = true
+        path_in_datastore = "vm-101-disk-0"
+        queues            = 0
+        replicate         = true
+        serial            = [90mnull[0m[0m
+        size              = 60
+        ssd               = false
+    }
+
+    initialization {
+        datastore_id         = "local-lvm"
+        file_format          = [90mnull[0m[0m
+        interface            = "ide2"
+        meta_data_file_id    = [90mnull[0m[0m
+        network_data_file_id = [90mnull[0m[0m
+        type                 = [90mnull[0m[0m
+        upgrade              = true
+        user_data_file_id    = "local:snippets/k3s-i7-user-data.yaml"
+        vendor_data_file_id  = [90mnull[0m[0m
+
+        dns {
+            domain  = [90mnull[0m[0m
+            servers = [
+                "1.1.1.1",
+            ]
+        }
+
+        ip_config {
+            ipv4 {
+                address = "192.168.1.238/24"
+                gateway = "192.168.1.248"
+            }
+        }
+    }
+
+    memory {
+        dedicated      = 16384
+        floating       = 0
+        hugepages      = [90mnull[0m[0m
+        keep_hugepages = false
+        shared         = 0
+    }
+
+    operating_system {
+        type = "l26"
+    }
+
+    serial_device {
+        device = "socket"
+    }
+}

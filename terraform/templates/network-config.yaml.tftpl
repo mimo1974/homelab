@@ -1,0 +1,16 @@
+version: 2
+ethernets:
+  eth0:
+    match:
+      macaddress: "${mac}"
+    set-name: eth0
+    addresses:
+      - ${address}
+    routes:
+      - to: default
+        via: ${gateway}
+    nameservers:
+      addresses:
+%{ for s in dns_servers ~}
+        - ${s}
+%{ endfor ~}
