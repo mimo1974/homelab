@@ -82,6 +82,8 @@ resource "libvirt_domain" "this" {
 
   features = {
     acpi = true
+    # ARM KVM guests need the interrupt controller matched to the host (Pi 5: GICv3)
+    gic = var.arch == "aarch64" ? { version = "host" } : null
   }
 
   cpu = {
