@@ -58,6 +58,18 @@ network:
         addresses: [192.168.1.1]
 ```
 
+Ubuntu confines each VM with AppArmor, and the per-VM profile does not list the
+qcow2 *backing file* (the base cloud image), so QEMU fails with
+`Could not open '.../k3s-pi-base.qcow2': Permission denied`
+(seen on Ubuntu 26.04.1, libvirt 12.0.0; the kernel audit log may hide the
+denial because of rate limiting: `sysctl -w kernel.printk_ratelimit=0`).
+Fix, once, as root:
+
+```sh
+mkdir -p /etc/apparmor.d/abstractions/libvirt-qemu.d
+echo '/var/lib/libvirt/images/k3s-*/** rk,' > /etc/apparmor.d/abstractions/libvirt-qemu.d/k3s-images
+```
+
 Remove or disable any other netplan file that configures `eth0` with DHCP.
 Confirm KVM is available: `ls /dev/kvm`.
 
