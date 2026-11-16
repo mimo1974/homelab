@@ -33,6 +33,11 @@ resource "libvirt_volume" "disk" {
     path   = libvirt_volume.base.path
     format = { type = "qcow2" }
   }
+
+  # A new base image must give a new disk: an overlay over a different base corrupts the guest.
+  lifecycle {
+    replace_triggered_by = [libvirt_volume.base.id]
+  }
 }
 
 resource "libvirt_cloudinit_disk" "this" {
@@ -88,6 +93,11 @@ resource "libvirt_domain" "this" {
 
   cpu = {
     mode = "host-passthrough"
+  }
+
+  # Recreate the VM when its disk was replaced.
+  lifecycle {
+    replace_triggered_by = [libvirt_volume.disk.id]
   }
 
   devices = {
