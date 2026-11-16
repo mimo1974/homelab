@@ -108,10 +108,10 @@ variable "vm_user" {
 
 variable "ubuntu_image_amd64" {
   type    = string
-  default = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+  default = "https://cloud-images.ubuntu.com/resolute/current/resolute-server-cloudimg-amd64.img"
 }
 
 variable "ubuntu_image_arm64" {
   type    = string
-  default = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-arm64.img"
+  default = "https://cloud-images.ubuntu.com/resolute/current/resolute-server-cloudimg-arm64.img"
 }

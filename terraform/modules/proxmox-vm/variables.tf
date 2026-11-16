@@ -15,7 +15,7 @@ variable "image_url" {
 variable "image_file_name" {
   type        = string
   description = "Name on the datastore. Must end in .qcow2 for content type import."
-  default     = "ubuntu-24.04-noble-amd64.qcow2"
+  default     = "ubuntu-26.04-resolute-amd64.qcow2"
 }
 
 variable "vcpu" {

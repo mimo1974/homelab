@@ -75,4 +75,9 @@ resource "proxmox_virtual_environment_vm" "this" {
   }
 
   serial_device {}
+
+  # import_from is only used at creation, so a new image must recreate the VM.
+  lifecycle {
+    replace_triggered_by = [proxmox_download_file.image.id]
+  }
 }
